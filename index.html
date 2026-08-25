@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Zaber XY Stage Controller</title>
+
+    <link
+        rel="stylesheet"
+        href="static/style.css"
+    >
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Zaber XY Stage</h1>
+        <p>Laboratory Stage Control</p>
+    </header>
+
+
+    <!-- CONNECTION -->
+
+    <section class="card">
+
+        <h2>Connection</h2>
+
+        <label>Serial Port</label>
+
+        <input
+            id="port"
+            type="text"
+            value="{{ default_port }}"
+        >
+
+        <div class="button-row">
+
+            <button onclick="connectStage()">
+                Connect
+            </button>
+
+            <button
+                class="secondary"
+                onclick="disconnectStage()"
+            >
+                Disconnect
+            </button>
+
+        </div>
+
+        <div id="connectionStatus" class="status">
+            Not connected
+        </div>
+
+    </section>
+
+
+    <!-- CURRENT POSITION -->
+
+    <section class="card">
+
+        <h2>Stage Status</h2>
+
+        <div class="position-grid">
+
+            <div>
+                <span>X Position</span>
+                <strong id="xPosition">--</strong>
+                <small>mm</small>
+            </div>
+
+            <div>
+                <span>Y Position</span>
+                <strong id="yPosition">--</strong>
+                <small>mm</small>
+            </div>
+
+        </div>
+
+        <div class="button-row">
+
+            <button onclick="getStatus()">
+                Refresh Position
+            </button>
+
+            <button onclick="homeStage()">
+                Home Stage
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ABSOLUTE MOVE -->
+
+    <section class="card">
+
+        <h2>Absolute Move</h2>
+
+        <p>
+            Move directly to a specific X/Y coordinate.
+        </p>
+
+        <div class="input-grid">
+
+            <div>
+                <label>X (mm)</label>
+                <input
+                    id="absX"
+                    type="number"
+                    step="0.1"
+                    value="0"
+                >
+            </div>
+
+            <div>
+                <label>Y (mm)</label>
+                <input
+                    id="absY"
+                    type="number"
+                    step="0.1"
+                    value="0"
+                >
+            </div>
+
+            <div>
+                <label>Speed (mm/s)</label>
+                <input
+                    id="absVelocity"
+                    type="number"
+                    step="0.5"
+                    value="5"
+                >
+            </div>
+
+        </div>
+
+        <button onclick="moveAbsolute()">
+            Move Absolute
+        </button>
+
+    </section>
+
+
+    <!-- RELATIVE MOVE -->
+
+    <section class="card">
+
+        <h2>Relative Move</h2>
+
+        <p>
+            Move a specified distance from the current position.
+        </p>
+
+        <div class="input-grid">
+
+            <div>
+                <label>ΔX (mm)</label>
+                <input
+                    id="relX"
+                    type="number"
+                    step="0.1"
+                    value="5"
+                >
+            </div>
+
+            <div>
+                <label>ΔY (mm)</label>
+                <input
+                    id="relY"
+                    type="number"
+                    step="0.1"
+                    value="0"
+                >
+            </div>
+
+            <div>
+                <label>Speed (mm/s)</label>
+                <input
+                    id="relVelocity"
+                    type="number"
+                    step="0.5"
+                    value="5"
+                >
+            </div>
+
+        </div>
+
+        <button onclick="moveRelative()">
+            Move Relative
+        </button>
+
+    </section>
+
+
+    <!-- STEP SEQUENCE -->
+
+    <section class="card">
+
+        <h2>Manual Step Sequence</h2>
+
+        <p>
+            Start at a position, then press
+            <strong>Next Position</strong>
+            whenever you are ready to move again.
+        </p>
+
+        <div class="input-grid">
+
+            <div>
+                <label>Start X (mm)</label>
+                <input
+                    id="startX"
+                    type="number"
+                    value="0"
+                    step="0.1"
+                >
+            </div>
+
+            <div>
+                <label>Start Y (mm)</label>
+                <input
+                    id="startY"
+                    type="number"
+                    value="0"
+                    step="0.1"
+                >
+            </div>
+
+            <div>
+                <label>X Step (mm)</label>
+                <input
+                    id="stepX"
+                    type="number"
+                    value="5"
+                    step="0.1"
+                >
+            </div>
+
+            <div>
+                <label>Y Step (mm)</label>
+                <input
+                    id="stepY"
+                    type="number"
+                    value="0"
+                    step="0.1"
+                >
+            </div>
+
+            <div>
+                <label>Positions</label>
+                <input
+                    id="numPositions"
+                    type="number"
+                    value="10"
+                    min="1"
+                >
+            </div>
+
+            <div>
+                <label>Speed (mm/s)</label>
+                <input
+                    id="scanVelocity"
+                    type="number"
+                    value="5"
+                    step="0.5"
+                >
+            </div>
+
+        </div>
+
+        <div class="button-row">
+
+            <button onclick="startSequence()">
+                Start Sequence
+            </button>
+
+            <button
+                class="next"
+                onclick="nextPosition()"
+            >
+                Next Position
+            </button>
+
+        </div>
+
+        <div id="scanStatus" class="status">
+            No sequence running
+        </div>
+
+    </section>
+
+
+    <!-- EMERGENCY STOP -->
+
+    <section class="card emergency">
+
+        <h2>Motion Stop</h2>
+
+        <button
+            class="stop"
+            onclick="stopStage()"
+        >
+            STOP STAGE
+        </button>
+
+    </section>
+
+
+    <div id="message" class="message">
+        Ready.
+    </div>
+
+</div>
+
+
+<script>
+
+function message(text, error=false) {
+
+    const box = document.getElementById("message");
+
+    box.innerText = text;
+
+    box.className = error
+        ? "message error"
+        : "message";
+}
+
+
+function updatePosition(data) {
+
+    if (data.x !== undefined) {
+        document.getElementById("xPosition").innerText =
+            Number(data.x).toFixed(3);
+    }
+
+    if (data.y !== undefined) {
+        document.getElementById("yPosition").innerText =
+            Number(data.y).toFixed(3);
+    }
+}
+
+
+async function post(url, data={}) {
+
+    try {
+
+        const response = await fetch(url, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message);
+        }
+
+        message(result.message || "Command complete.");
+
+        updatePosition(result);
+
+        return result;
+
+    }
+
+    catch (error) {
+
+        message(error.message, true);
+
+        return null;
+    }
+}
+
+
+async function connectStage() {
+
+    const port =
+        document.getElementById("port").value;
+
+    const result =
+        await post("/connect", {port});
+
+    if (result) {
+
+        document.getElementById(
+            "connectionStatus"
+        ).innerText = "Connected";
+    }
+}
+
+
+async function disconnectStage() {
+
+    const result =
+        await post("/disconnect");
+
+    if (result) {
+
+        document.getElementById(
+            "connectionStatus"
+        ).innerText = "Disconnected";
+    }
+}
+
+
+async function getStatus() {
+
+    try {
+
+        const response =
+            await fetch("/status");
+
+        const result =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message);
+        }
+
+        updatePosition(result);
+
+        document.getElementById(
+            "connectionStatus"
+        ).innerText =
+            result.homed
+            ? "Connected — Homed"
+            : "Connected — Not homed";
+
+        message("Position updated.");
+    }
+
+    catch (error) {
+
+        message(error.message, true);
+    }
+}
+
+
+async function homeStage() {
+
+    await post("/home");
+}
+
+
+async function stopStage() {
+
+    await post("/stop");
+}
+
+
+async function moveAbsolute() {
+
+    await post(
+        "/move_absolute",
+        {
+            x: document.getElementById("absX").value,
+            y: document.getElementById("absY").value,
+            velocity:
+                document.getElementById(
+                    "absVelocity"
+                ).value
+        }
+    );
+}
+
+
+async function moveRelative() {
+
+    await post(
+        "/move_relative",
+        {
+            dx:
+                document.getElementById(
+                    "relX"
+                ).value,
+
+            dy:
+                document.getElementById(
+                    "relY"
+                ).value,
+
+            velocity:
+                document.getElementById(
+                    "relVelocity"
+                ).value
+        }
+    );
+}
+
+
+async function startSequence() {
+
+    const result =
+        await post(
+            "/scan/start",
+            {
+                start_x:
+                    document.getElementById(
+                        "startX"
+                    ).value,
+
+                start_y:
+                    document.getElementById(
+                        "startY"
+                    ).value,
+
+                step_x:
+                    document.getElementById(
+                        "stepX"
+                    ).value,
+
+                step_y:
+                    document.getElementById(
+                        "stepY"
+                    ).value,
+
+                num_positions:
+                    document.getElementById(
+                        "numPositions"
+                    ).value,
+
+                velocity:
+                    document.getElementById(
+                        "scanVelocity"
+                    ).value
+            }
+        );
+
+    if (result) {
+
+        document.getElementById(
+            "scanStatus"
+        ).innerText =
+            `Position ${result.position_number} ready`;
+    }
+}
+
+
+async function nextPosition() {
+
+    const result =
+        await post("/scan/next");
+
+    if (!result) return;
+
+    if (result.finished) {
+
+        document.getElementById(
+            "scanStatus"
+        ).innerText =
+            "Sequence complete";
+
+    } else {
+
+        document.getElementById(
+            "scanStatus"
+        ).innerText =
+            `Position ${result.position_number} ready`;
+    }
+}
+
+</script>
+
+</body>
+</html>        
